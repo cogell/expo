@@ -45,6 +45,11 @@
 - (void)display {
   [super display];
 
+  // short circuit when height or width are 0. Fixes CGContext errors throwing
+  if (!self.colors || self.colors.count == 0 || self.bounds.size.width == 0 || self.bounds.size.height == 0) {
+    return;
+  }
+
   BOOL hasAlpha = NO;
 
   for (NSInteger i = 0; i < self.colors.count; i++) {
@@ -69,10 +74,6 @@
   CGContextSaveGState(ctx);
 
   CGSize size = self.bounds.size;
-  if (!self.colors || self.colors.count == 0 || size.width == 0.0 || size.height == 0.0)
-    return;
-
-
   CGFloat *locations = nil;
 
   locations = malloc(sizeof(CGFloat) * self.colors.count);

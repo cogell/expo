@@ -12,5 +12,5 @@ public protocol AnyViewProp: AnyDefinition {
   /**
    Function that sets the underlying prop value for given view.
    */
-  func set(value: Any?, onView: UIView)
+  func set(value: Any, onView: UIView)
 }

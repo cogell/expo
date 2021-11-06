@@ -23,15 +23,8 @@
   return (EXLinearGradientLayer *)self.layer;
 }
 
-- (void)setColors:(NSArray *)colorStrings
+- (void)setColors:(NSArray<UIColor *> *)colors
 {
-  NSMutableArray *colors = [NSMutableArray arrayWithCapacity:colorStrings.count];
-  for (NSString *colorString in colorStrings) {
-    UIColor *convertedColor = [EXUtilities UIColor:colorString];
-    if (convertedColor) {
-      [colors addObject:convertedColor];
-    }
-  }
   self.gradientLayer.colors = colors;
 }
 

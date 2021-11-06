@@ -56,6 +56,26 @@ extension AnyModule {
   }
 
   /**
+   Creates a view prop that defines its name and setter.
+   */
+  public func prop<ViewType, PropType: AnyArgument>(
+    _ name: String,
+    _ setter: @escaping (ViewType, PropType) -> Void
+  ) -> AnyDefinition {
+    return ConcreteViewProp(name, propType: [ArgumentType(PropType.self)], setter)
+  }
+
+  /**
+   Creates a view prop that defines its name and setter.
+   */
+  public func prop<ViewType, PropType: AnyArgument, Prop2: AnyArgument>(
+    _ name: String,
+    _ setter: @escaping (ViewType, PropType, Prop2) -> Void
+  ) -> AnyDefinition {
+    return ConcreteViewProp(name, propType: [ArgumentType(PropType.self), ArgumentType(Prop2.self)], setter)
+  }
+
+  /**
    Factory function for methods with 2 arguments.
    */
   public func method<R, A0: AnyArgument, A1: AnyArgument>(
@@ -237,9 +257,24 @@ public func view(_ closure: @escaping () -> UIView) -> AnyDefinition {
   return ViewFactory(closure)
 }
 
-/**
- Creates a view prop that defines its name and setter.
- */
-public func prop<ViewType: UIView, PropType>(_ name: String, _ setter: @escaping (ViewType, PropType) -> Void) -> AnyDefinition {
-  return ConcreteViewProp(name, setter)
-}
+
+
+///**
+// Creates a view prop that defines its name and setter.
+// */
+//public func prop<ViewType: UIView, PropType: AnyArgument>(
+//  _ name: String,
+//  _ setter: @escaping (ViewType, PropType) -> Void
+//) -> AnyDefinition where PropType: RandomAccessCollection {
+//  return ConcreteViewProp<ViewType, PropType>(name, propType: ArgumentType(PropType.self), setter)
+//}
+//
+///**
+// Creates a view prop that defines its name and setter.
+// */
+//public func prop<ViewType: UIView, PropType: AnyArgument>(
+//  _ name: String,
+//  _ setter: @escaping (ViewType, PropType) -> Void
+//) -> AnyDefinition where PropType: RandomAccessCollection, PropType.Element: RandomAccessCollection {
+//  return ConcreteViewProp<ViewType, PropType>(name, propType: ArgumentType(PropType.self), setter)
+//}

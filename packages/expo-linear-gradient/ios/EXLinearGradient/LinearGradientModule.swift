@@ -1,3 +1,4 @@
+import UIKit
 import ExpoModulesCore
 
 public class LinearGradientModule: Module {
@@ -9,19 +10,19 @@ public class LinearGradientModule: Module {
         EXLinearGradient()
       }
 
-      prop("colors") { (view: EXLinearGradient, colors: [Int]) in
+      self.prop("colors") { (view: EXLinearGradient, colors: [UIColor]) in
         view.setColors(colors)
       }
 
-      prop("startPoint") { (view: EXLinearGradient, startPoint: [Double]) in
-        view.setStart(CGPoint(x: startPoint[0], y: startPoint[1]))
+      self.prop("startPoint") { (view: EXLinearGradient, startPoint: CGPoint) in
+        view.setStart(startPoint)
       }
 
-      prop("endPoint") { (view: EXLinearGradient, endPoint: [Double]) in
-        view.setEnd(CGPoint(x: endPoint[0], y: endPoint[1]))
+      self.prop("endPoint") { (view: EXLinearGradient, endPoint: CGPoint) in
+        view.setEnd(endPoint)
       }
 
-      prop("locations") { (view: EXLinearGradient, locations: [Double]) in
+      self.prop("locations") { (view: EXLinearGradient, locations: [Double]) in
         view.setLocations(locations)
       }
     }
