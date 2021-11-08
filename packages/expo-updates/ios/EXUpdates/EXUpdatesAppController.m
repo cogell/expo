@@ -9,6 +9,7 @@
 #import <EXUpdates/EXUpdatesRemoteAppLoader.h>
 #import <EXUpdates/EXUpdatesSelectionPolicyFactory.h>
 #import <EXUpdates/EXUpdatesUtils.h>
+#import <EXUpdates/EXUpdatesBuildData.h>
 #import <React/RCTReloadCommand.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -146,6 +147,9 @@ static NSString * const EXUpdatesErrorEventName = @"error";
 
   [_errorRecovery startMonitoring];
 
+  //here
+  
+  
   _loaderTask = [[EXUpdatesAppLoaderTask alloc] initWithConfig:_config
                                                       database:_database
                                                      directory:_updatesDirectory
