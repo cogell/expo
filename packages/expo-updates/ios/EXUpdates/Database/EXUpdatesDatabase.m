@@ -461,7 +461,7 @@ static NSString * const EXUpdatesDatabaseStaticBuildKey = @"staticBuildData";
     id value = rows[0][@"value"];
     if (value && [value isKindOfClass:[NSString class]]) {
       NSDictionary *jsonObject = [NSJSONSerialization JSONObjectWithData:[(NSString *)value dataUsingEncoding:NSUTF8StringEncoding] options:kNilOptions error:error];
-      if (!*error && jsonObject && [jsonObject isKindOfClass:[NSDictionary class]]) {
+      if (!(error && *error) && jsonObject && [jsonObject isKindOfClass:[NSDictionary class]]) {
         return jsonObject;
       }
     }

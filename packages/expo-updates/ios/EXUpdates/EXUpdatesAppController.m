@@ -147,7 +147,7 @@ static NSString * const EXUpdatesErrorEventName = @"error";
 
   [_errorRecovery startMonitoring];
 
-  //here
+  [EXUpdatesBuildData ensureBuildDataIsConsistent:_database scopeKey:_config.scopeKey config:_config error:nil];
   
   
   _loaderTask = [[EXUpdatesAppLoaderTask alloc] initWithConfig:_config

@@ -7,8 +7,6 @@
 #import <EXUpdates/EXUpdatesDatabase.h>
 #import <EXUpdates/EXUpdatesBuildData.h>
 
-#import <OCMockito/OCMockito.h>
-
 @interface EXUpdatesBuildDataTests : XCTestCase
 
 @property (nonatomic, strong) EXUpdatesDatabase *db;
@@ -76,18 +74,16 @@ static NSString * const scopeKey = @"test";
 }
 
 - (void)test_clearAllUpdates {
-  EXUpdatesUpdate *update = [EXUpdatesNewUpdate updateWithNewManifest:_manifest response:nil config:_configChannelTest database:_db];
-  
   dispatch_sync(_db.databaseQueue, ^{
+    EXUpdatesUpdate *update = [EXUpdatesNewUpdate updateWithNewManifest:_manifest response:nil config:_configChannelTest database:_db];
+  
     NSError *updatesError;
     [_db addUpdate:update error:&updatesError];
     if (updatesError) {
       XCTFail(@"%@", updatesError.localizedDescription);
       return;
     }
-  });
 
-  dispatch_sync(_db.databaseQueue, ^{
     NSError *queryError;
     NSArray<EXUpdatesUpdate *> *allUpdates = [_db allUpdatesWithConfig:_configChannelTest error:&queryError];
     if (queryError) {
@@ -98,18 +94,17 @@ static NSString * const scopeKey = @"test";
     XCTAssertGreaterThan(allUpdates.count, 0);
   });
   
-  
   [EXUpdatesBuildData clearAllUpdates:_configChannelTest database:_db];
   
   dispatch_sync(_db.databaseQueue, ^{
     NSError *queryError;
-    NSArray<EXUpdatesUpdate *> *allUpdates = [_db allUpdatesWithConfig:_configChannelTest error:&queryError];
+    NSArray<EXUpdatesUpdate *> *allUpdatesAfter = [_db allUpdatesWithConfig:_configChannelTest error:&queryError];
     if (queryError) {
       XCTFail(@"%@", queryError.localizedDescription);
       return;
     }
     
-    XCTAssertEqual(allUpdates.count, 0);
+    XCTAssertEqual(allUpdatesAfter.count, 0);
   });
 }
 
@@ -118,40 +113,49 @@ static NSString * const scopeKey = @"test";
 
   dispatch_sync(_db.databaseQueue, ^{
     NSError *error;
-    
     NSDictionary *staticBuildData = [EXUpdatesBuildData getBuildData:_db scopeKey:scopeKey error:&error];
     XCTAssertNil(staticBuildData);
 
     NSArray<EXUpdatesUpdate *> *allUpdates = [_db allUpdatesWithConfig:_configChannelTest error:&error];
     XCTAssertEqual(allUpdates.count, 0);
-
-    [EXUpdatesBuildData ensureBuildDataIsConsistent:_db scopeKey:scopeKey config:_configChannelTest error:&error];
-
-    NSDictionary *newStaticBuildData = [EXUpdatesBuildData getBuildData:_db scopeKey:scopeKey error:&error];
-    XCTAssertNotNil(newStaticBuildData);
-
-    
-    
     XCTAssertNil(error);
   });
+
+  NSError *error;
+  [EXUpdatesBuildData ensureBuildDataIsConsistent:_db scopeKey:scopeKey config:_configChannelTest error:&error];
+  XCTAssertNil(error);
+
   
-  
+  dispatch_sync(_db.databaseQueue, ^{
+      NSError *error;
+      NSDictionary *newStaticBuildData = [EXUpdatesBuildData getBuildData:_db scopeKey:scopeKey error:&error];
+      XCTAssertNotNil(newStaticBuildData);
+      XCTAssertNil(error);
+  });
+
 }
 
 - (void)test_ensureBuildDataIsConsistent_buildDataIsConsistent {
-  EXUpdatesUpdate *update = [EXUpdatesNewUpdate updateWithNewManifest:_manifest response:nil config:_configChannelTest database:_db];
-  
+  dispatch_sync(_db.databaseQueue, ^{
+    EXUpdatesUpdate *update = [EXUpdatesNewUpdate updateWithNewManifest:_manifest response:nil config:_configChannelTest database:_db];
+    
+    NSError *error;
+    [_db addUpdate:update error:nil];
+    XCTAssertNil(error);
+  });
+
+  [EXUpdatesBuildData setBuildData:_db scopeKey:scopeKey config:_configChannelTest error:nil];
+
+  NSError *error;
+  [EXUpdatesBuildData ensureBuildDataIsConsistent:_db scopeKey:scopeKey config:_configChannelTest error:nil];
+  XCTAssertNil(error);
+
   dispatch_sync(_db.databaseQueue, ^{
     NSError *error;
-    [_db addUpdate:update error:&error];
-    [EXUpdatesBuildData setBuildData:_db scopeKey:scopeKey config:_configChannelTest error:&error];
-    
-    [EXUpdatesBuildData ensureBuildDataIsConsistent:_db scopeKey:scopeKey config:_configChannelTest error:&error];
-    
-    NSDictionary *staticBuildData = [EXUpdatesBuildData getBuildData:_db scopeKey:scopeKey error:&error];
+    NSDictionary *staticBuildData = [EXUpdatesBuildData getBuildData:_db scopeKey:scopeKey error:nil];
 
     XCTAssertTrue([staticBuildData isEqualToDictionary:_configChannelTestDictionary]);
-    NSArray<EXUpdatesUpdate *> *allUpdates = [_db allUpdatesWithConfig:_configChannelTest error:&error];
+    NSArray<EXUpdatesUpdate *> *allUpdates = [_db allUpdatesWithConfig:_configChannelTest error:nil];
     XCTAssertEqual(allUpdates.count, 1);
     
     XCTAssertNil(error);
@@ -159,27 +163,28 @@ static NSString * const scopeKey = @"test";
 }
 
 - (void)test_ensureBuildDataIsConsistent_buildDataIsInconsistent {
-  EXUpdatesUpdate *update = [EXUpdatesNewUpdate updateWithNewManifest:_manifest response:nil config:_configChannelTest database:_db];
-  
   dispatch_sync(_db.databaseQueue, ^{
+    EXUpdatesUpdate *update = [EXUpdatesNewUpdate updateWithNewManifest:_manifest response:nil config:_configChannelTest database:_db];
+
     NSError *error;
     [_db addUpdate:update error:&error];
-
     [EXUpdatesBuildData setBuildData:_db scopeKey:scopeKey config:_configChannelTest error:&error];
-    
-    [EXUpdatesBuildData ensureBuildDataIsConsistent:_db scopeKey:scopeKey config:_configChannelTestTwo error:&error];
-    
-    NSDictionary *staticBuildData = [EXUpdatesBuildData getBuildData:_db scopeKey:scopeKey error:&error];
-    XCTAssertTrue([staticBuildData isEqualToDictionary:_configChannelTestTwoDictionary]);
     XCTAssertNil(error);
   });
   
+  NSError *error;
+  [EXUpdatesBuildData ensureBuildDataIsConsistent:_db scopeKey:scopeKey config:_configChannelTestTwo error:&error];
+  XCTAssertNil(error);
+
   dispatch_sync(_db.databaseQueue, ^{
     NSError *error;
+    NSDictionary *staticBuildData = [EXUpdatesBuildData getBuildData:_db scopeKey:scopeKey error:&error];
+    XCTAssertTrue([staticBuildData isEqualToDictionary:_configChannelTestTwoDictionary]);
+    XCTAssertNil(error);
+
     NSArray<EXUpdatesUpdate *> *allUpdates = [_db allUpdatesWithConfig:_configChannelTestTwo error:&error];
     XCTAssertEqual(allUpdates.count, 0);
   });
-
 }
 
 @end

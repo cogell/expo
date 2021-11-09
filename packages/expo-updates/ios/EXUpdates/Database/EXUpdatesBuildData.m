@@ -20,7 +20,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (void)ensureBuildDataIsConsistent:(EXUpdatesDatabase *)database scopeKey:(NSString *)scopeKey config:(EXUpdatesConfig *)config error:(NSError ** _Nullable)error;
 {
-  NSDictionary *staticBuildData = [database staticBuildDataWithScopeKey:scopeKey error:error];
+  
+  __block NSDictionary *staticBuildData;
+  dispatch_sync(database.databaseQueue, ^{
+    staticBuildData = [database staticBuildDataWithScopeKey:scopeKey error:nil];
+  });
+  
   if(staticBuildData == nil){
     [self setBuildData:database scopeKey:scopeKey config:config error:error];
 
@@ -48,15 +53,16 @@ NS_ASSUME_NONNULL_BEGIN
     @"EXUpdatesReleaseChannel":config.releaseChannel,
     @"EXUpdatesRequestHeaders":config.requestHeaders,
   };
-  
-  [database setStaticBuildDataWithScopeKey:staticBuildData withScopeKey:scopeKey error:nil];
+  dispatch_async(database.databaseQueue, ^{
+    [database setStaticBuildDataWithScopeKey:staticBuildData withScopeKey:scopeKey error:nil];
+  });
 }
 
 + (void)clearAllUpdates:(EXUpdatesConfig *)config
                database:(EXUpdatesDatabase *)database
 {
   NSLog(@"clearing updates");
-  dispatch_async(database.databaseQueue, ^{
+  dispatch_sync(database.databaseQueue, ^{
     NSError *error;
     
     NSArray<EXUpdatesUpdate *> *allUpdates = [database allUpdatesWithConfig:config error:&error];
