@@ -7,17 +7,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation EXUpdatesBuildData
 
-+ (BOOL)isBuildDataConsistent:(NSDictionary *)staticBuildData config:(EXUpdatesConfig *)config error:(NSError ** _Nullable)error;
-{
-  NSDictionary *impliedStaticBuildData = @{
-    @"EXUpdatesURL":config.updateUrl.absoluteString,
-    @"EXUpdatesReleaseChannel":config.releaseChannel,
-    @"EXUpdatesRequestHeaders":config.requestHeaders,
-  };
-  return [staticBuildData isEqualToDictionary:impliedStaticBuildData
-  ];
-};
-
 + (void)ensureBuildDataIsConsistent:(EXUpdatesDatabase *)database scopeKey:(NSString *)scopeKey config:(EXUpdatesConfig *)config error:(NSError ** _Nullable)error;
 {
   
@@ -27,44 +16,45 @@ NS_ASSUME_NONNULL_BEGIN
   });
   
   if(staticBuildData == nil){
-    [self setBuildData:database scopeKey:scopeKey config:config error:error];
-
+    [self setBuildDataInDatabase:database config:config];
   } else {
-    BOOL isConsistent = [self isBuildDataConsistent:staticBuildData config:config error:error];
+    NSDictionary *impliedStaticBuildData = [self getBuildDataFromConfig:config];
+    BOOL isConsistent = [staticBuildData isEqualToDictionary:impliedStaticBuildData];
     if (!isConsistent){
       [self clearAllUpdates:config database:database];
-      [self setBuildData:database scopeKey:scopeKey config:config error:error];
+      [self setBuildDataInDatabase:database config:config];
     }
   }
   
 }
 
-+ (nullable NSDictionary *)getBuildData:(EXUpdatesDatabase *)database scopeKey:(NSString *)scopeKey error:(NSError ** _Nullable)error;
++ (nullable NSDictionary *)getBuildDataFromDatabase:(EXUpdatesDatabase *)database scopeKey:(NSString *)scopeKey error:(NSError ** _Nullable)error;
 {
   NSDictionary *staticBuildData = [database staticBuildDataWithScopeKey:scopeKey error:error];
-  
   return staticBuildData;
 }
 
-+ (void)setBuildData:(EXUpdatesDatabase *)database scopeKey:(NSString *)scopeKey config:(EXUpdatesConfig *)config error:(NSError ** _Nullable)error;
++ (nullable NSDictionary *)getBuildDataFromConfig:(EXUpdatesConfig *)config;
 {
-  NSDictionary *staticBuildData = @{
+  return @{
     @"EXUpdatesURL":config.updateUrl.absoluteString,
     @"EXUpdatesReleaseChannel":config.releaseChannel,
     @"EXUpdatesRequestHeaders":config.requestHeaders,
   };
+}
+
++ (void)setBuildDataInDatabase:(EXUpdatesDatabase *)database config:(EXUpdatesConfig *)config;
+{
   dispatch_async(database.databaseQueue, ^{
-    [database setStaticBuildDataWithScopeKey:staticBuildData withScopeKey:scopeKey error:nil];
+    [database setStaticBuildData:[self getBuildDataFromConfig:config] withScopeKey:config.scopeKey];
   });
 }
 
 + (void)clearAllUpdates:(EXUpdatesConfig *)config
                database:(EXUpdatesDatabase *)database
 {
-  NSLog(@"clearing updates");
-  dispatch_sync(database.databaseQueue, ^{
+  dispatch_async(database.databaseQueue, ^{
     NSError *error;
-    
     NSArray<EXUpdatesUpdate *> *allUpdates = [database allUpdatesWithConfig:config error:&error];
     if (!allUpdates || error) {
       NSLog(@"Error clearing updates: %@", error.localizedDescription);

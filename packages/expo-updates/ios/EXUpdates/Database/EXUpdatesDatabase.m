@@ -547,9 +547,13 @@ static NSString * const EXUpdatesDatabaseStaticBuildKey = @"staticBuildData";
   sqlite3_exec(_db, "COMMIT;", NULL, NULL, NULL);
 }
 
-- (void)setStaticBuildDataWithScopeKey:(NSDictionary *)staticBuildData withScopeKey:(NSString *)scopeKey error:(NSError ** _Nullable)error
+- (void)setStaticBuildData:(NSDictionary *)staticBuildData withScopeKey:(NSString *)scopeKey
 {
-  [self _setJsonData:staticBuildData withKey:EXUpdatesDatabaseStaticBuildKey scopeKey:scopeKey isInTransaction:NO error:error];
+  NSError *error;
+  [self _setJsonData:staticBuildData withKey:EXUpdatesDatabaseStaticBuildKey scopeKey:scopeKey isInTransaction:NO error:&error];
+  if(error){
+    NSLog(@"Error setting static build data in database: %@", error.localizedDescription);
+  }
 }
 
 # pragma mark - helper methods
