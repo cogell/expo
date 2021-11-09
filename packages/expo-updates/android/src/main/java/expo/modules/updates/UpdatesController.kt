@@ -165,8 +165,7 @@ class UpdatesController private constructor(
     if (!updatesConfiguration.isEnabled) {
       launcher = NoDatabaseLauncher(context, updatesConfiguration)
     }
-    val scopeKey = updatesConfiguration.scopeKey
-    if (updatesConfiguration.updateUrl == null || scopeKey == null) {
+    if (updatesConfiguration.updateUrl == null || updatesConfiguration.scopeKey == null) {
       throw AssertionError("expo-updates is enabled, but no valid URL is configured in AndroidManifest.xml. If you are making a release build for the first time, make sure you have run `expo publish` at least once.")
     }
     if (updatesDirectory == null) {
@@ -175,7 +174,7 @@ class UpdatesController private constructor(
     }
 
     val databaseLocal = database
-    BuildData.ensureBuildDataIsConsistent(updatesConfiguration, databaseLocal, scopeKey)
+    BuildData.ensureBuildDataIsConsistent(updatesConfiguration, databaseLocal)
     releaseDatabase()
 
     LoaderTask(

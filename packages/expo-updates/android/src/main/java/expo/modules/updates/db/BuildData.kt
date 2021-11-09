@@ -29,64 +29,75 @@ import org.json.JSONObject
  *   UPDATES_CONFIGURATION_REQUEST_HEADERS_KEY
  */
 object BuildData {
-  var buildKey = "STATIC_BUILD_DATA"
+  private var staticBuildDataKey = "staticBuildData"
 
   fun ensureBuildDataIsConsistent(
     updatesConfiguration: UpdatesConfiguration,
     database: UpdatesDatabase,
-    scopeKey: String
   ) {
-    val buildJSON = getBuildData(database, scopeKey)
+    val scopeKey = updatesConfiguration.scopeKey
+        ?: throw AssertionError("expo-updates is enabled, but no valid URL is configured in AndroidManifest.xml. If you are making a release build for the first time, make sure you have run `expo publish` at least once.")
+    val buildJSON = getBuildDataFromDatabase(database, scopeKey)
     if (buildJSON == null) {
-      setBuildData(updatesConfiguration, database, scopeKey)
+      setBuildDataInDatabase(database,updatesConfiguration)
     } else if (!isBuildDataConsistent(updatesConfiguration, buildJSON)) {
-      clearAllUpdates(database)
-      setBuildData(updatesConfiguration, database, scopeKey)
+      clearAllUpdatesFromDatabase(database)
+      setBuildDataInDatabase(database,updatesConfiguration)
     }
   }
 
-  fun clearAllUpdates(database: UpdatesDatabase) {
+  fun clearAllUpdatesFromDatabase(database: UpdatesDatabase) {
     val allUpdates = database.updateDao().loadAllUpdates()
     database.updateDao().deleteUpdates(allUpdates)
   }
 
   fun isBuildDataConsistent(
     updatesConfiguration: UpdatesConfiguration,
-    buildJSON: JSONObject
+    databaseBuildData: JSONObject
   ): Boolean {
-    val requestHeadersJSON = buildJSON.getJSONObject(UpdatesConfiguration.UPDATES_CONFIGURATION_REQUEST_HEADERS_KEY)
+    val configBuildData = getBuildDataFromConfig(updatesConfiguration)
 
-    if (requestHeadersJSON.length() != updatesConfiguration.requestHeaders.size) return false
-
+    val releaseChannelKey = UpdatesConfiguration.UPDATES_CONFIGURATION_RELEASE_CHANNEL_KEY
+    val updateUrlKey = UpdatesConfiguration.UPDATES_CONFIGURATION_UPDATE_URL_KEY
+    val requestHeadersKey = UpdatesConfiguration.UPDATES_CONFIGURATION_REQUEST_HEADERS_KEY
+    // check equality of the two JSONObjects. The build data object is string valued with the
+    // exception of "requestHeaders" which is a string valued object.
     return mutableListOf<Boolean>().apply {
-      add(buildJSON.getNullable<String>(UpdatesConfiguration.UPDATES_CONFIGURATION_RELEASE_CHANNEL_KEY) == updatesConfiguration.releaseChannel)
-      add(buildJSON.get(UpdatesConfiguration.UPDATES_CONFIGURATION_UPDATE_URL_KEY)?.let { Uri.parse(it.toString()) } == updatesConfiguration.updateUrl)
-      for ((key, value) in updatesConfiguration.requestHeaders) {
-        add(value == requestHeadersJSON.optString(key))
+      add(databaseBuildData.getNullable<String>(releaseChannelKey) == configBuildData.get(releaseChannelKey))
+      add(databaseBuildData.get(updateUrlKey).let { Uri.parse(it.toString()) } == configBuildData.get(updateUrlKey))
+
+      // loop through keys from both requestHeaders objects.
+      for (key in configBuildData.getJSONObject(requestHeadersKey).keys()) {
+        add(databaseBuildData.getJSONObject(requestHeadersKey).getNullable<String>(key)==configBuildData.getJSONObject(requestHeadersKey).getNullable(key))
+      }
+      for (key in databaseBuildData.getJSONObject(requestHeadersKey).keys()) {
+        add(databaseBuildData.getJSONObject(requestHeadersKey).getNullable<String>(key)==configBuildData.getJSONObject(requestHeadersKey).getNullable(key))
       }
     }.all { it }
   }
 
-  fun getBuildData(database: UpdatesDatabase, scopeKey: String): JSONObject? {
-    val buildJSONString = database.jsonDataDao()?.loadJSONStringForKey(buildKey, scopeKey)
+  fun setBuildDataInDatabase(
+    database: UpdatesDatabase,
+    updatesConfiguration: UpdatesConfiguration,
+  ) {
+    val buildDataJSON = getBuildDataFromConfig(updatesConfiguration)
+    database.jsonDataDao()?.setJSONStringForKey(staticBuildDataKey, buildDataJSON.toString(), updatesConfiguration.scopeKey as String)
+  }
+
+  fun getBuildDataFromDatabase(database: UpdatesDatabase, scopeKey: String): JSONObject? {
+    val buildJSONString = database.jsonDataDao()?.loadJSONStringForKey(staticBuildDataKey, scopeKey)
     return if (buildJSONString == null) null else JSONObject(buildJSONString)
   }
 
-  fun setBuildData(
-    updatesConfiguration: UpdatesConfiguration,
-    database: UpdatesDatabase,
-    scopeKey: String
-  ) {
+  private fun getBuildDataFromConfig(updatesConfiguration: UpdatesConfiguration): JSONObject {
     val requestHeadersJSON = JSONObject().apply {
       for ((key, value) in updatesConfiguration.requestHeaders) put(key, value)
     }
-
-    val buildDataJSON = JSONObject().apply {
+    val buildData = JSONObject().apply {
       put(UpdatesConfiguration.UPDATES_CONFIGURATION_RELEASE_CHANNEL_KEY, updatesConfiguration.releaseChannel)
       put(UpdatesConfiguration.UPDATES_CONFIGURATION_UPDATE_URL_KEY, updatesConfiguration.updateUrl)
       put(UpdatesConfiguration.UPDATES_CONFIGURATION_REQUEST_HEADERS_KEY, requestHeadersJSON)
     }
-
-    database.jsonDataDao()?.setJSONStringForKey(buildKey, buildDataJSON.toString(), scopeKey)
+    return buildData
   }
 }

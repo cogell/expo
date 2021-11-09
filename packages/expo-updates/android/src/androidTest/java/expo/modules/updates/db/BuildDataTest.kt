@@ -22,10 +22,12 @@ class BuildDataTest {
   private lateinit var db: UpdatesDatabase
   private val scopeKey = "test"
   private val buildMapDefault = mapOf(
+    "scopeKey" to scopeKey,
     "updateUrl" to Uri.parse("https://exp.host/@test/test"),
     "requestHeaders" to mapOf("expo-channel-name" to "test")
   )
   private val buildMapTestChannel = mapOf(
+    "scopeKey" to scopeKey,
     "updateUrl" to Uri.parse("https://exp.host/@test/test"),
     "requestHeaders" to mapOf("expo-channel-name" to "testTwo")
   )
@@ -51,63 +53,63 @@ class BuildDataTest {
 
   @Test
   fun ensureBuildDataIsConsistent_buildDataIsNull() {
-    val nullBuildDataJSON = spyBuildData.getBuildData(db, scopeKey)
+    val nullBuildDataJSON = spyBuildData.getBuildDataFromDatabase(db, scopeKey)
     assertNull(nullBuildDataJSON)
 
-    spyBuildData.ensureBuildDataIsConsistent(updatesConfigDefault, db, scopeKey)
+    spyBuildData.ensureBuildDataIsConsistent(updatesConfigDefault, db )
 
-    val buildDataJSON = spyBuildData.getBuildData(db, scopeKey)
+    val buildDataJSON = spyBuildData.getBuildDataFromDatabase(db, scopeKey)
     assertNotNull(buildDataJSON)
-    verify(exactly = 0) { spyBuildData.clearAllUpdates(any()) }
-    verify(exactly = 1) { spyBuildData.setBuildData(any(), any(), any()) }
+    verify(exactly = 0) { spyBuildData.clearAllUpdatesFromDatabase(any()) }
+    verify(exactly = 1) { spyBuildData.setBuildDataInDatabase(any(), any()) }
   }
 
   @Test
   fun ensureBuildDataIsConsistent_buildDataIsInconsistent() {
-    spyBuildData.setBuildData(updatesConfigDefault, db, scopeKey)
-    val buildDataJSONDefault = spyBuildData.getBuildData(db, scopeKey)!!
+    spyBuildData.setBuildDataInDatabase(db,updatesConfigDefault)
+    val buildDataJSONDefault = spyBuildData.getBuildDataFromDatabase(db, scopeKey)!!
     val isConsistentDefault = spyBuildData.isBuildDataConsistent(updatesConfigDefault, buildDataJSONDefault)
     val isConsistentTestChannel = spyBuildData.isBuildDataConsistent(updatesConfigTestChannel, buildDataJSONDefault)
     assertTrue(isConsistentDefault)
     assertFalse(isConsistentTestChannel)
-    verify(exactly = 0) { spyBuildData.clearAllUpdates(any()) }
-    verify(exactly = 1) { spyBuildData.setBuildData(any(), any(), any()) }
+    verify(exactly = 0) { spyBuildData.clearAllUpdatesFromDatabase(any()) }
+    verify(exactly = 1) { spyBuildData.setBuildDataInDatabase(any(), any()) }
 
-    spyBuildData.ensureBuildDataIsConsistent(updatesConfigTestChannel, db, scopeKey)
+    spyBuildData.ensureBuildDataIsConsistent(updatesConfigTestChannel, db )
 
-    val buildDataJSONTestChannel = spyBuildData.getBuildData(db, scopeKey)!!
+    val buildDataJSONTestChannel = spyBuildData.getBuildDataFromDatabase(db, scopeKey)!!
     val isConsistentDefaultAfter = spyBuildData.isBuildDataConsistent(updatesConfigDefault, buildDataJSONTestChannel)
     val isConsistentTestChannelAfter = spyBuildData.isBuildDataConsistent(updatesConfigTestChannel, buildDataJSONTestChannel)
     assertFalse(isConsistentDefaultAfter)
     assertTrue(isConsistentTestChannelAfter)
-    verify(exactly = 1) { spyBuildData.clearAllUpdates(any()) }
-    verify(exactly = 2) { spyBuildData.setBuildData(any(), any(), any()) }
+    verify(exactly = 1) { spyBuildData.clearAllUpdatesFromDatabase(any()) }
+    verify(exactly = 2) { spyBuildData.setBuildDataInDatabase(any(), any()) }
   }
 
   @Test
   fun ensureBuildDataIsConsistent_buildDataIsConsistent() {
-    spyBuildData.setBuildData(updatesConfigDefault, db, scopeKey)
-    val buildDataJSONDefault = spyBuildData.getBuildData(db, scopeKey)!!
+    spyBuildData.setBuildDataInDatabase(db,updatesConfigDefault)
+    val buildDataJSONDefault = spyBuildData.getBuildDataFromDatabase(db, scopeKey)!!
     val isConsistentDefault = spyBuildData.isBuildDataConsistent(updatesConfigDefault, buildDataJSONDefault)
     val isConsistentTestChannel = spyBuildData.isBuildDataConsistent(updatesConfigTestChannel, buildDataJSONDefault)
     assertTrue(isConsistentDefault)
     assertFalse(isConsistentTestChannel)
-    verify(exactly = 0) { spyBuildData.clearAllUpdates(any()) }
-    verify(exactly = 1) { spyBuildData.setBuildData(any(), any(), any()) }
+    verify(exactly = 0) { spyBuildData.clearAllUpdatesFromDatabase(any()) }
+    verify(exactly = 1) { spyBuildData.setBuildDataInDatabase(any(), any()) }
 
-    spyBuildData.ensureBuildDataIsConsistent(updatesConfigDefault, db, scopeKey)
+    spyBuildData.ensureBuildDataIsConsistent( updatesConfigDefault, db)
 
-    val buildDataJSONTestChannel = spyBuildData.getBuildData(db, scopeKey)!!
+    val buildDataJSONTestChannel = spyBuildData.getBuildDataFromDatabase(db, scopeKey)!!
     val isConsistentDefaultAfter = spyBuildData.isBuildDataConsistent(updatesConfigDefault, buildDataJSONTestChannel)
     val isConsistentTestChannelAfter = spyBuildData.isBuildDataConsistent(updatesConfigTestChannel, buildDataJSONTestChannel)
     assertTrue(isConsistentDefaultAfter)
     assertFalse(isConsistentTestChannelAfter)
-    verify(exactly = 0) { spyBuildData.clearAllUpdates(any()) }
-    verify(exactly = 1) { spyBuildData.setBuildData(any(), any(), any()) }
+    verify(exactly = 0) { spyBuildData.clearAllUpdatesFromDatabase(any()) }
+    verify(exactly = 1) { spyBuildData.setBuildDataInDatabase(any(), any()) }
   }
 
   @Test
-  fun clearAllReadyUpdates() {
+  fun clearAllUpdatesFromDatabase() {
     val uuid = UUID.randomUUID()
     val date = Date()
     val runtimeVersion = "1.0"
@@ -119,7 +121,7 @@ class BuildDataTest {
     val byId = db.updateDao().loadUpdateWithId(uuid)
     assertNotNull(byId)
 
-    BuildData.clearAllUpdates(db)
+    BuildData.clearAllUpdatesFromDatabase(db)
 
     val shouldBeNull = db.updateDao().loadUpdateWithId(uuid)
     assertNull(shouldBeNull)
