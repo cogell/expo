@@ -145,10 +145,16 @@ static NSString * const EXUpdatesErrorEventName = @"error";
     return;
   }
 
+  NSError *buildDataError;
+  [EXUpdatesBuildData ensureBuildDataIsConsistent:_database config:_config error:&buildDataError];
+  if (buildDataError) {
+    @throw [NSException exceptionWithName:NSInternalInconsistencyException
+                                   reason:buildDataError.localizedDescription
+                                 userInfo:buildDataError.userInfo];
+  }
+  
   [_errorRecovery startMonitoring];
 
-  [EXUpdatesBuildData ensureBuildDataIsConsistent:_database scopeKey:_config.scopeKey config:_config error:nil];
-  
   
   _loaderTask = [[EXUpdatesAppLoaderTask alloc] initWithConfig:_config
                                                       database:_database

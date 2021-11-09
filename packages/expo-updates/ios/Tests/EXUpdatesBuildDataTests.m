@@ -75,7 +75,7 @@ static NSString * const scopeKey = @"test";
   XCTAssertNil(error);
 }
 
-- (void)test_clearAllUpdates {
+- (void)test_clearAllUpdatesFromDatabase {
   dispatch_sync(_db.databaseQueue, ^{
     EXUpdatesUpdate *update = [EXUpdatesNewUpdate updateWithNewManifest:_manifest response:nil config:_configChannelTest database:_db];
   
@@ -96,7 +96,7 @@ static NSString * const scopeKey = @"test";
     XCTAssertGreaterThan(allUpdates.count, 0);
   });
   
-  [EXUpdatesBuildData clearAllUpdates:_configChannelTest database:_db];
+  [EXUpdatesBuildData clearAllUpdatesFromDatabase:_db config:_configChannelTest error:nil];
   
   dispatch_sync(_db.databaseQueue, ^{
     NSError *queryError;
@@ -124,7 +124,7 @@ static NSString * const scopeKey = @"test";
   });
 
   NSError *error;
-  [EXUpdatesBuildData ensureBuildDataIsConsistent:_db scopeKey:scopeKey config:_configChannelTest error:&error];
+  [EXUpdatesBuildData ensureBuildDataIsConsistent:_db config:_configChannelTest error:&error];
   XCTAssertNil(error);
 
   
@@ -146,10 +146,10 @@ static NSString * const scopeKey = @"test";
     XCTAssertNil(error);
   });
 
-  [EXUpdatesBuildData setBuildDataInDatabase:_db config:_configChannelTest];
-
+  [EXUpdatesBuildData setBuildDataInDatabase:_db config:_configChannelTest error:nil];
+  
   NSError *error;
-  [EXUpdatesBuildData ensureBuildDataIsConsistent:_db scopeKey:scopeKey config:_configChannelTest error:nil];
+  [EXUpdatesBuildData ensureBuildDataIsConsistent:_db config:_configChannelTest error:nil];
   XCTAssertNil(error);
 
   dispatch_sync(_db.databaseQueue, ^{
@@ -170,12 +170,12 @@ static NSString * const scopeKey = @"test";
 
     NSError *error;
     [_db addUpdate:update error:&error];
-    [EXUpdatesBuildData setBuildDataInDatabase:_db config:_configChannelTest];
+    [EXUpdatesBuildData setBuildDataInDatabase:_db config:_configChannelTest error:nil];
     XCTAssertNil(error);
   });
   
   NSError *error;
-  [EXUpdatesBuildData ensureBuildDataIsConsistent:_db scopeKey:scopeKey config:_configChannelTestTwo error:&error];
+  [EXUpdatesBuildData ensureBuildDataIsConsistent:_db config:_configChannelTestTwo error:&error];
   XCTAssertNil(error);
 
   dispatch_sync(_db.databaseQueue, ^{
