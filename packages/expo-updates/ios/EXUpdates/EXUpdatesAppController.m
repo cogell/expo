@@ -106,7 +106,8 @@ static NSString * const EXUpdatesErrorEventName = @"error";
 - (void)start
 {
   NSAssert(!_isStarted, @"EXUpdatesAppController:start should only be called once per instance");
-
+  _launcher = nil; // make sure the launcher is not shared between launches
+  
   if (!_config.isEnabled) {
     EXUpdatesAppLauncherNoDatabase *launcher = [[EXUpdatesAppLauncherNoDatabase alloc] init];
     _launcher = launcher;

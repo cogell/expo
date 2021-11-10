@@ -162,6 +162,8 @@ class UpdatesController private constructor(
    */
   @Synchronized
   fun start(context: Context) {
+    launcher = null // make sure the launcher is not shared between launches
+
     if (!updatesConfiguration.isEnabled) {
       launcher = NoDatabaseLauncher(context, updatesConfiguration)
     }
