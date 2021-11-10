@@ -36,13 +36,13 @@ object BuildData {
     database: UpdatesDatabase,
   ) {
     val scopeKey = updatesConfiguration.scopeKey
-        ?: throw AssertionError("expo-updates is enabled, but no valid URL is configured in AndroidManifest.xml. If you are making a release build for the first time, make sure you have run `expo publish` at least once.")
+      ?: throw AssertionError("expo-updates is enabled, but no valid URL is configured in AndroidManifest.xml. If you are making a release build for the first time, make sure you have run `expo publish` at least once.")
     val buildJSON = getBuildDataFromDatabase(database, scopeKey)
     if (buildJSON == null) {
-      setBuildDataInDatabase(database,updatesConfiguration)
+      setBuildDataInDatabase(database, updatesConfiguration)
     } else if (!isBuildDataConsistent(updatesConfiguration, buildJSON)) {
       clearAllUpdatesFromDatabase(database)
-      setBuildDataInDatabase(database,updatesConfiguration)
+      setBuildDataInDatabase(database, updatesConfiguration)
     }
   }
 
@@ -68,10 +68,10 @@ object BuildData {
 
       // loop through keys from both requestHeaders objects.
       for (key in configBuildData.getJSONObject(requestHeadersKey).keys()) {
-        add(databaseBuildData.getJSONObject(requestHeadersKey).getNullable<String>(key)==configBuildData.getJSONObject(requestHeadersKey).getNullable(key))
+        add(databaseBuildData.getJSONObject(requestHeadersKey).getNullable<String>(key) == configBuildData.getJSONObject(requestHeadersKey).getNullable(key))
       }
       for (key in databaseBuildData.getJSONObject(requestHeadersKey).keys()) {
-        add(databaseBuildData.getJSONObject(requestHeadersKey).getNullable<String>(key)==configBuildData.getJSONObject(requestHeadersKey).getNullable(key))
+        add(databaseBuildData.getJSONObject(requestHeadersKey).getNullable<String>(key) == configBuildData.getJSONObject(requestHeadersKey).getNullable(key))
       }
     }.all { it }
   }
